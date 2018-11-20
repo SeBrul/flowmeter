@@ -32,15 +32,8 @@ volatile uint32_t lastflowratetimer = 0;
 // and use that to calculate a flow rate
 volatile float flowrate;
 
-void ISR_timer3_LED1(struct tc_module *const module_inst) 
-{ static bool b;
-  pinMode(LED1, OUTPUT);
-  digitalWrite(LED1, b=!b);
-}
-
-// Interrupt is called once a millisecond, looks for any pulses from the sensor!
-SIGNAL(TIMER2_COMPA_vect) {
-  uint8_t x = digitalRead(FLOWSENSORPIN);
+void ISR_timer(struct tc_module *const module_inst) 
+{ uint8_t x = digitalRead(FLOWSENSORPIN);
   
   if (x == lastflowpinstate) {
    lastflowratetimer++;
@@ -50,24 +43,38 @@ SIGNAL(TIMER2_COMPA_vect) {
   if (x == HIGH) {
    //low to high transition!
    pulses++;
- }
+}
+
+//// Interrupt is called once a millisecond, looks for any pulses from the sensor!
+//SIGNAL(TIMER2_COMPA_vect) {
+//  uint8_t x = digitalRead(FLOWSENSORPIN);
+//  
+//  if (x == lastflowpinstate) {
+//   lastflowratetimer++;
+//   return; // nothing changed! 
+// }
+// 
+//  if (x == HIGH) {
+//   //low to high transition!
+//   pulses++;
+// }
  
  lastflowpinstate = x;
  flowrate = 1000.0;
  flowrate /= lastflowratetimer; // in hertz
  lastflowratetimer = 0;
 }
-void useInterrupt(boolean v) {
- if (v) {
-   // Timer0 is already used for millis() - we'll just interrupt somewhere
-   // in the middle and call the "Compare A" function above
-   OCR0A = 0xAF;
-   TIMSK0 |= _BV(OCIE0A);
- } else {
-   // do not call the interrupt function COMPA anymore
-   TIMSK0 &= ~_BV(OCIE0A);
- }
-}
+//void useInterrupt(boolean v) {
+// if (v) {
+//   // Timer0 is already used for millis() - we'll just interrupt somewhere
+//   // in the middle and call the "Compare A" function above
+//   OCR0A = 0xAF;
+//   TIMSK0 |= _BV(OCIE0A);
+// } else {
+//   // do not call the interrupt function COMPA anymore
+//   TIMSK0 &= ~_BV(OCIE0A);
+// }
+//}
 
 void setup() {
   Serial.begin(9600);
@@ -77,7 +84,7 @@ void setup() {
   pinMode(FLOWSENSORPIN, INPUT);
   digitalWrite(FLOWSENSORPIN, HIGH);
   lastflowpinstate = digitalRead(FLOWSENSORPIN);
-  useInterrupt(true);
+//  useInterrupt(true);
 }
 
 void loop() // run over and over again
