@@ -1,3 +1,22 @@
+#include <Adafruit_ZeroTimer.h>
+
+#include <power.h>
+#include <compiler.h>
+#include <interrupt_sam_nvic.h>
+#include <status_codes.h>
+#include <i2s.h>
+#include <pinmux.h>
+#include <clock_feature.h>
+#include <parts.h>
+#include <gclk.h>
+#include <Adafruit_ASFcore.h>
+#include <system_interrupt_features.h>
+#include <interrupt.h>
+#include <system.h>
+#include <system_interrupt.h>
+#include <reset.h>
+#include <clock.h>
+
 //#include "LiquidCrystal.h"
 //LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 
@@ -12,6 +31,13 @@ volatile uint8_t lastflowpinstate;
 volatile uint32_t lastflowratetimer = 0;
 // and use that to calculate a flow rate
 volatile float flowrate;
+
+void ISR_timer3_LED1(struct tc_module *const module_inst) 
+{ static bool b;
+  pinMode(LED1, OUTPUT);
+  digitalWrite(LED1, b=!b);
+}
+
 // Interrupt is called once a millisecond, looks for any pulses from the sensor!
 SIGNAL(TIMER2_COMPA_vect) {
   uint8_t x = digitalRead(FLOWSENSORPIN);
