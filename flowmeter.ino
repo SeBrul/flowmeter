@@ -1,3 +1,22 @@
+#include <Adafruit_ZeroTimer.h>
+
+#include <power.h>
+#include <compiler.h>
+#include <interrupt_sam_nvic.h>
+#include <status_codes.h>
+#include <i2s.h>
+#include <pinmux.h>
+#include <clock_feature.h>
+#include <parts.h>
+#include <gclk.h>
+#include <Adafruit_ASFcore.h>
+#include <system_interrupt_features.h>
+#include <interrupt.h>
+#include <system.h>
+#include <system_interrupt.h>
+#include <reset.h>
+#include <clock.h>
+
 //#include "LiquidCrystal.h"
 //LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 
@@ -12,9 +31,9 @@ volatile uint8_t lastflowpinstate;
 volatile uint32_t lastflowratetimer = 0;
 // and use that to calculate a flow rate
 volatile float flowrate;
-// Interrupt is called once a millisecond, looks for any pulses from the sensor!
-SIGNAL(TIMER2_COMPA_vect) {
-  uint8_t x = digitalRead(FLOWSENSORPIN);
+
+void ISR_timer(struct tc_module *const module_inst) 
+{ uint8_t x = digitalRead(FLOWSENSORPIN);
   
   if (x == lastflowpinstate) {
    lastflowratetimer++;
@@ -24,24 +43,38 @@ SIGNAL(TIMER2_COMPA_vect) {
   if (x == HIGH) {
    //low to high transition!
    pulses++;
- }
+}
+
+//// Interrupt is called once a millisecond, looks for any pulses from the sensor!
+//SIGNAL(TIMER2_COMPA_vect) {
+//  uint8_t x = digitalRead(FLOWSENSORPIN);
+//  
+//  if (x == lastflowpinstate) {
+//   lastflowratetimer++;
+//   return; // nothing changed! 
+// }
+// 
+//  if (x == HIGH) {
+//   //low to high transition!
+//   pulses++;
+// }
  
  lastflowpinstate = x;
  flowrate = 1000.0;
  flowrate /= lastflowratetimer; // in hertz
  lastflowratetimer = 0;
 }
-void useInterrupt(boolean v) {
- if (v) {
-   // Timer0 is already used for millis() - we'll just interrupt somewhere
-   // in the middle and call the "Compare A" function above
-   OCR0A = 0xAF;
-   TIMSK0 |= _BV(OCIE0A);
- } else {
-   // do not call the interrupt function COMPA anymore
-   TIMSK0 &= ~_BV(OCIE0A);
- }
-}
+//void useInterrupt(boolean v) {
+// if (v) {
+//   // Timer0 is already used for millis() - we'll just interrupt somewhere
+//   // in the middle and call the "Compare A" function above
+//   OCR0A = 0xAF;
+//   TIMSK0 |= _BV(OCIE0A);
+// } else {
+//   // do not call the interrupt function COMPA anymore
+//   TIMSK0 &= ~_BV(OCIE0A);
+// }
+//}
 
 void setup() {
   Serial.begin(9600);
@@ -51,7 +84,7 @@ void setup() {
   pinMode(FLOWSENSORPIN, INPUT);
   digitalWrite(FLOWSENSORPIN, HIGH);
   lastflowpinstate = digitalRead(FLOWSENSORPIN);
-  useInterrupt(true);
+//  useInterrupt(true);
 }
 
 void loop() // run over and over again
